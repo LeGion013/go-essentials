@@ -35,10 +35,46 @@ breaking down the step is called FAN OUT:
 
 */
 
-import "fmt"
+import (
+	"fmt"
+	"math/rand"
+	"time"
+)
 
-func main() {
+// func main() {
+func fanout() {
 	fmt.Println("app started...")
+
+	// step1 will be broke down to n goroutines:
+	gonums := 5
+
+	// create channel which will collect all results from goroutines:
+	ch := make(chan string, gonums)
+
+	for g := 0; g <= gonums; g++ {
+		go func(gonum int) {
+			// simulation of work thourgh sleep
+			time.Sleep(time.Duration(rand.Intn(200)) * time.Millisecond)
+			// write/populate some data to channel / signal that work need to be done:
+			ch <- "some data"
+			fmt.Println("small task done and sent signal: ", gonum)
+		}(g)
+	}
+
+	// iterate through results
+	for gonums > 0 {
+		// read the value from channel: blocking operation "waiting to work to come"
+		val := <-ch
+
+		gonums--
+
+		fmt.Println(val)
+		fmt.Println("channel got the message from routine: ", gonums)
+
+	}
+
+	time.Sleep(time.Second)
+	fmt.Println("-----------------------------------------")
 
 	fmt.Println("terminated...")
 }
