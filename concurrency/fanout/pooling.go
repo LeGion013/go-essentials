@@ -17,7 +17,8 @@ func myworker(num int, job <-chan string) {
 
 }
 
-func main() {
+func pooling() {
+	//func main() {
 
 	// 1. create channel
 	// 2. define pool (goroutines number)
