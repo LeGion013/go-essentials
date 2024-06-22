@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 	"sync"
@@ -22,7 +23,7 @@ type resultSet struct {
 	Out int
 }
 
-func worker(workerNumber int, jobsCh <-chan int, resultCh chan<- int) {
+func workerNoContext(workerNumber int, jobsCh <-chan int, resultCh chan<- int) {
 	// will block untill we have something in the channel
 
 	for job := range jobsCh {
@@ -36,11 +37,45 @@ func worker(workerNumber int, jobsCh <-chan int, resultCh chan<- int) {
 	}
 }
 
+func worker(ctx context.Context, workerNumber int, jobsCh <-chan int, resultCh chan<- int) {
+	// will block untill we have something in the channel
+
+	//defer wg.Done()
+
+	for {
+		select {
+		case job, ok := <-jobsCh:
+			if !ok {
+				return
+			}
+			fmt.Printf("Worker %d starting...", workerNumber)
+			// **** some work imitation
+			time.Sleep(3 * time.Second)
+			res := job * 2
+			resultCh <- res
+
+			fmt.Printf("worker %d is done, %d * 2 = %d\n", workerNumber, job, res)
+		case <-ctx.Done():
+			fmt.Printf("worker %d canceled.\n", workerNumber)
+			return
+		}
+	}
+
+	/*
+		for job := range jobsCh {
+
+		}
+	*/
+}
+
 func main() {
 	//func fanout_hw() {
 
 	//ctx, cancel := context.WithCancel(context.Background())
-	//defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	//var wg sync.WaitGroup
 
 	// ***** we have some "work/step" that we can broke down to several goroutines*****
 	jobs := make([]int, 0)
@@ -63,7 +98,7 @@ func main() {
 
 	// **** start 2 workers(numWorkers) for doing our work (pooling)
 	for w := 1; w <= numWorkers; w++ {
-		go worker(w, jobsCh, resultCh)
+		go worker(ctx, w, jobsCh, resultCh)
 	}
 
 	// now we have N workers and they are idling
