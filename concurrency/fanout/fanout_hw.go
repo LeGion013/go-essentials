@@ -61,11 +61,6 @@ func worker(ctx context.Context, workerNumber int, jobsCh <-chan int, resultCh c
 		}
 	}
 
-	/*
-		for job := range jobsCh {
-
-		}
-	*/
 }
 
 func main() {
